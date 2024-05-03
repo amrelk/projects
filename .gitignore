@@ -1,0 +1,73 @@
+.idea
+
+*-backups/
+ibom.html
+out/
+
+*.zip
+
+gen/
+*.mxproject
+
+
+# Temporary files for kicad
+*.000
+*.bak
+*.bck
+*.lck
+*.kicad_pcb-bak
+*.kicad_sch-bak
+*-backups
+*.kicad_prl
+*.sch-bak
+*.bak
+*~
+_autosave-*
+*.tmp
+*-save.pro
+*-save.kicad_pcb
+fp-info-cache
+*.lck
+
+# Netlist files (exported from Eeschema)
+*.net
+
+# Autorouter files (exported from Pcbnew)
+*.dsn
+*.ses
+
+compile_commands.json
+
+# Exported BOM files
+*.xml
+*.csv
+
+.cache
+.vscode/
+
+### KiCad Patch ###
+rescue-backup/
+
+*.tsv
+bom/
+
+*/#auto_saved_files#
+
+.gdb_history
+
+
+### code
+
+gerbs
+.DS_Store
+*.step
+*.log
+
+
+*/*/Core/
+*/*/Drivers/
+*/*/gen/
+*/*/.mxproject
+*/*/build/
+*/*/.cache/
+*/*/compile_commands.json

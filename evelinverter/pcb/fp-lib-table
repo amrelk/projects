@@ -1,0 +1,3 @@
+(fp_lib_table
+  (lib (name "a22verter")(type "KiCad")(uri "${KIPRJMOD}/libs/a22verter.pretty")(options "")(descr ""))
+)
