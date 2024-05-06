@@ -1,0 +1,15 @@
+#!/usr/bin/env sh
+
+TMPDIR=/tmp/stm32
+mkdir -p $TMPDIR
+
+hash=$(sha256sum code.ioc | sed 's/  .*//')
+
+echo $hash
+
+if mkdir $TMPDIR/$hash ; then
+  echo -e "config load $1.ioc\nproject generate\nexit" | stm32cubemx -q
+  cp -r gen Core Drivers $TMPDIR/$hash/ && echo "copied to tmp"
+else
+  cp -r $TMPDIR/$hash/* . && echo "copied from tmp"
+fi

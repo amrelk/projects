@@ -120,6 +120,14 @@ ifeq ($(CHIP), STM32G031K8U6)
 	OCD_TARGET = stm32g0x
 endif
 
+ifeq ($(CHIP), STM32G071C8U3)
+	CPU = -mcpu=cortex-m0plus
+	# FPU =
+	# FLOAT-ABI =
+	C_DEFS = -DSTM32G071xx -DEV24_EXCLUDE_CAN
+	OCD_TARGET = stm32g0x
+endif
+
 
 ifeq ($(CPU), none)
 $(error Don't know what your chip ($(CHIP)) is - erroring)
@@ -204,21 +212,6 @@ vpath %.s $(sort $(dir $(ASM_SOURCES)))
 OBJECTS += $(addprefix $(BUILD_DIR)/cpp/,$(notdir $(CXX_SOURCES:.cpp=.o)))
 vpath %.s $(sort $(dir $(CXX_SOURCES)))
 
-$(BUILD_DIR)/c/%.o: %.c Makefile | $(BUILD_DIR)
-	@echo "$(GREEN)[compiling]$(NORMAL) " $<
-	$(SILENCE)$(CC) -c $(C_FLAGS) -Wa,-a,-ad,-alms=$(BUILD_DIR)/c/$(notdir $(<:.c=.lst)) $< -o $@
-
-$(BUILD_DIR)/asm/%.o: gen/%.s Makefile | $(BUILD_DIR)
-	@echo "$(GREEN)[compiling]$(NORMAL) " $<
-	$(SILENCE)$(AS) -c $(AS_FLAGS) $< -o $@
-
-$(BUILD_DIR)/cpp/%.o: src/%.cpp Makefile | $(BUILD_DIR)
-	@echo "$(GREEN)[compiling]$(NORMAL) " $<
-	$(SILENCE)$(CXX) -c $(CXX_FLAGS) -Wa,-a,-ad,-alms=$(BUILD_DIR)/cpp/$(notdir $(<:.cpp=.lst)) $< -o $@
-# THIS IS  A DIRECT COPY PASTE OF THE LINE ABOVE, with the source changed and the debug print changed
-$(BUILD_DIR)/cpp/%.o: $(COMMON_DIR)/code/src/%.cpp Makefile | $(BUILD_DIR)
-	@echo "$(GREEN)[compiling]$(NORMAL) " $(shell echo "$<" | cut -c 7-)
-	$(SILENCE)$(CXX) -c $(CXX_FLAGS) -Wa,-a,-ad,-alms=$(BUILD_DIR)/cpp/$(notdir $(<:.cpp=.lst)) $< -o $@
 
 $(BUILD_DIR)/$(TARGET).elf: $(OBJECTS) Makefile
 	$(SILENCE)echo "$(GREEN)[compiling]$(NORMAL) " $@
@@ -238,6 +231,24 @@ $(BUILD_DIR):
 	$(SILENCE)mkdir $@/asm		
 
 
+$(BUILD_DIR)/c/%.o: %.c Core/Src/main.c Makefile | $(BUILD_DIR)
+	@echo "$(GREEN)[compiling]$(NORMAL) " $<
+	$(SILENCE)$(CC) -c $(C_FLAGS) -Wa,-a,-ad,-alms=$(BUILD_DIR)/c/$(notdir $(<:.c=.lst)) $< -o $@
+
+$(BUILD_DIR)/asm/%.o: gen/%.s Core/Src/main.c Makefile | $(BUILD_DIR)
+	@echo "$(GREEN)[compiling]$(NORMAL) " $<
+	$(SILENCE)$(AS) -c $(AS_FLAGS) $< -o $@
+
+$(BUILD_DIR)/cpp/%.o: src/%.cpp Core/Src/main.c Makefile | $(BUILD_DIR)
+	@echo "$(GREEN)[compiling]$(NORMAL) " $<
+	$(SILENCE)$(CXX) -c $(CXX_FLAGS) -Wa,-a,-ad,-alms=$(BUILD_DIR)/cpp/$(notdir $(<:.cpp=.lst)) $< -o $@
+# THIS IS  A DIRECT COPY PASTE OF THE LINE ABOVE, with the source changed and the debug print changed
+$(BUILD_DIR)/cpp/%.o: $(COMMON_DIR)/code/src/%.cpp Core/Src/main.c Makefile | $(BUILD_DIR)
+	@echo "$(GREEN)[compiling]$(NORMAL) " $(shell echo "$<" | cut -c 7-)
+	$(SILENCE)$(CXX) -c $(CXX_FLAGS) -Wa,-a,-ad,-alms=$(BUILD_DIR)/cpp/$(notdir $(<:.cpp=.lst)) $< -o $@
+
+Core/Src/main.c: $(TARGET.ioc)
+	$(COMMON_DIR)/code/mkstm $(TARGET)
 #######################################
 # phony targets
 #######################################
@@ -254,12 +265,6 @@ fullclean:
 	-@rm -fR .mxproject
 	-@rm -fR compile_commands.json
 
-CUBEMX_COMMAND ?= stm32cubemx
-stm32:
-	@echo -e "config load $(TARGET).ioc\nproject generate\nexit" >> cubemx_commands.tmp
-	@cat cubemx_commands.tmp | $(CUBEMX_COMMAND) -q
-	@-rm -f cubemx_commands.tmp
-
 bear:
 	make -f Makefile clean
 	bear -- make -f Makefile -j6
@@ -275,7 +280,7 @@ target: $(BUILD_DIR)/$(TARGET).elf
 debug: $(BUILD_DIR)/$(TARGET).elf
 	$(DB) -ex 'tar ext :3333' -ex 'break ev24::main' -ex 'monitor reset halt' -ex 'run' $<
 
-.PHONY: clean fullclean bear stm32 all flash target debug
+.PHONY: clean fullclean bear all flash target debug
   
 #######################################
 # dependencies
