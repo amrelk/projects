@@ -1,0 +1,15 @@
+{
+    "meta": {
+        "version": 1.0
+    },
+    "name": "inv.evelynmau.de kicad lib",
+    "description": "kicad ",
+    "source": {
+        "type": "REST_API",
+        "api_version": "v1",
+        "root_url": "https://inv.evelynmau.de/plugin/kicad-library-plugin",
+        "token": "inv-9db4a1de9590c0e0305a0524865a3dad35aac7c8-20240508",
+        "timeout_parts_seconds": 60,
+        "timeout_categories_seconds": 6000
+    }
+}
