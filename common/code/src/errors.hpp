@@ -1,4 +1,4 @@
-namespace ev24 {
+namespace app {
 
 
 [[noreturn]]

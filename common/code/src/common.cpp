@@ -1,21 +1,21 @@
 #include "errors.hpp"
 
-namespace ev24 {
+namespace app {
 void main();
 }
 
 extern "C"
 {
 
-void _close(void) {}
+/*void _close(void) {}
 void _lseek(void) {}
 void _read(void) {}
 void _write(void) {}
 void _getpid(void) {}
-void _kill(void) {}
+void _kill(void) {}*/
 
 int main() {
-    ev24::main();
-    ev24::runtime_panic("Main terminated!");
+    app::main();
+    app::runtime_panic("Main terminated!");
 }
 }

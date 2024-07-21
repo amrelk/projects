@@ -75,9 +75,9 @@ COMMON_DIR = $(shell pwd | sed 's/projects.*//')projects/common
 
 CHIP ?= $(shell cat $(TARGET).ioc 2>/dev/null | awk -F "=" '/Mcu.CPN/{ print $$2 }')
 
-C_SOURCES   = $(shell find Core Drivers -name '*.c' 2>/dev/null)
+C_SOURCES   = $(shell find Core Drivers Middlewares USB_Device src $(COMMON_DIR)/code/src -name '*.c' 2>/dev/null)
 ASM_SOURCES = $(shell find gen -name '*.s' 2>/dev/null)
-CXX_SOURCES = $(shell find src ../../common/code/src -name '*.cpp' 2>/dev/null)
+CXX_SOURCES = $(shell find src $(COMMON_DIR)/code/src -name '*.cpp' 2>/dev/null)
 
 PREFIX ?= arm-none-eabi-
 
@@ -128,6 +128,14 @@ ifeq ($(CHIP), STM32G071C8U3)
 	OCD_TARGET = stm32g0x
 endif
 
+ifeq ($(CHIP), STM32G431CBT3TR)
+	CPU = -mcpu=cortex-m4
+	FPU = -mfpu=fpv4-sp-d16
+	FLOAT-ABI = -mfloat-abi=hard
+	C_DEFS = -DSTM32G431xx -DEV24_EXCLUDE_CAN
+	OCD_TARGET = stm32g4x
+endif
+
 
 ifeq ($(CPU), none)
 $(error Don't know what your chip ($(CHIP)) is - erroring)
@@ -151,11 +159,11 @@ C_INCLUDES = \
 -I$(shell find * -wholename "Drivers/*/Inc/Legacy") \
 -I$(shell find * -wholename "Drivers/CMSIS/Device/ST/*/Include") \
 -IDrivers/CMSIS/Include \
--I../../common/code/inc
+-I$(COMMON_DIR)/code/inc
 
-CXX_INCLUDES = $(C_INCLUDES)  -I../../common/code/src
+CXX_INCLUDES = $(C_INCLUDES)  -I$(COMMON_DIR)/code/src
 
-#$(info    C_INCLUDES is $(C_INCLUDES))
+$(info    C_INCLUDES is $(C_INCLUDES))
 
 WARNING_FLAGS = -Wall -Werror -Wno-error=unused-variable -Wno-error=unused-but-set-variable -Wno-error=unused-function
 
