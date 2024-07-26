@@ -51,7 +51,7 @@ rescue-backup/
 *.tsv
 bom/
 
-*/#auto_saved_files#
+\#auto_saved_files\#
 
 .gdb_history
 
