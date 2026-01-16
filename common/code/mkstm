@@ -3,13 +3,28 @@
 TMPDIR=/tmp/stm32
 mkdir -p $TMPDIR
 
-hash=$(sha256sum code.ioc | sed 's/  .*//')
 
-echo $hash
+PWD=$(pwd)
+hash=$(sha256sum $PWD/$1.ioc | sed "s/  .*//")
 
-if mkdir $TMPDIR/$hash ; then
-  echo -e "config load $1.ioc\nproject generate\nexit" | stm32cubemx -q
-  cp -r gen Core Drivers $TMPDIR/$hash/ && echo "copied to tmp"
+echo ioc hash is $hash
+
+if [ ! -d "$TMPDIR/$hash" ]; then
+  echo "generated code not cached; running stm32cubemx..."
+  # run cubemx but only print the last few lines of stdout, timeout so we get an error message if it makes a popup
+  echo -e "config load $PWD/$1.ioc\ngenerate code $PWD/generated\nexit" | timeout 40 xvfb-run ${CUBEMX_COMMAND:=stm32cubemx} -q 2>/dev/null
+  RETURN_CODE=$?
+  if [ "$RETURN_CODE" -eq 124 ]; then
+    tput setaf 1; echo "stm32cubemx timed out after 40s; this probably means there was a popup (or your computer is slow)"; tput sgr0
+    exit 124
+  elif [ "$RETURN_CODE" -ne 0 ]; then
+    tput setaf 1; echo "stm32cubemx unhandled error"; tput sgr0
+    exit $RETURN_CODE
+  fi
+  # the sed is necessary because stm32cubemx 'generate code' doesn't respect NoMain, then we use it to make sure something was actually generated
+  sed -i "/@brief  The application entry point/,/\/\*\*/d" generated/Src/main.c && mkdir $TMPDIR/$hash && cp -r generated $TMPDIR/$hash/ && echo "copied generated code to cache"
+  #exit with error if stm32cubemx didn't actually generate anything, or success if it did
+  exit $?
 else
-  cp -r $TMPDIR/$hash/* . && echo "copied from tmp"
+  cp -r $TMPDIR/$hash/generated . && echo "copied generated code from cache"
 fi
