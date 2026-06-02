@@ -11,14 +11,29 @@ echo ioc hash is $hash
 
 if [ ! -d "$TMPDIR/$hash" ]; then
   echo "generated code not cached; running stm32cubemx..."
+  # if pacman exists then we can use it to check versions as a convenience feature
+  if command -v pacman >/dev/null 2>&1; then
+    CUBEMX_VERSION=$(pacman -Q stm32cubemx | cut -d " " -f 2 | cut -d "-" -f 1)
+    if [ "$CUBEMX_VERSION" != "$(cat $PWD/$1.ioc 2>/dev/null | awk -F "=" '/MxCube.Version/{ print $2 }')" ]; then
+      echo "[ERROR] stm32cubemx / project version mismatch. please migrate the $1 project to $CUBEMX_VERSION" >&2
+      exit 1
+    fi
+  fi
+  # if we're in a github runner, let cubemx take more time
+  if [ "$GITHUB_ACTIONS" = "true" ]; then
+    CUBEMX_TIMEOUT=120
+  else
+    CUBEMX_TIMEOUT=120
+  fi
   # run cubemx but only print the last few lines of stdout, timeout so we get an error message if it makes a popup
-  echo -e "config load $PWD/$1.ioc\ngenerate code $PWD/generated\nexit" | timeout 40 xvfb-run ${CUBEMX_COMMAND:=stm32cubemx} -q 2>/dev/null
+  set -o pipefail
+  echo -e "config load $PWD/$1.ioc\ngenerate code $PWD/generated\nexit" | timeout $CUBEMX_TIMEOUT xvfb-run ${CUBEMX_COMMAND:=stm32cubemx} -q 2>/dev/null | tail -n 3
   RETURN_CODE=$?
   if [ "$RETURN_CODE" -eq 124 ]; then
-    tput setaf 1; echo "stm32cubemx timed out after 40s; this probably means there was a popup (or your computer is slow)"; tput sgr0
+    echo "[ERROR] stm32cubemx timed out after $CUBEMX_TIMEOUT s; this probably means there was a popup (or your computer is slow)" >&2
     exit 124
   elif [ "$RETURN_CODE" -ne 0 ]; then
-    tput setaf 1; echo "stm32cubemx unhandled error"; tput sgr0
+    echo "[ERROR] stm32cubemx unhandled error" >&2
     exit $RETURN_CODE
   fi
   # the sed is necessary because stm32cubemx 'generate code' doesn't respect NoMain, then we use it to make sure something was actually generated
